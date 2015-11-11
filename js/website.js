@@ -3,15 +3,24 @@ function makeEditButton(onclick) {
   return $('<div class="edit_button tb_button">Edit</div>').on('click', onclick);
 }
 function makeURL(path) {
-  return '/' + path;
+  // return '/' + path;
+  return 'https://bhasa.herokuapp.com/' + path;
 }
 function runJSON(method, path, query, callback) {
-  $.ajax({
+  console.log(query);
+  
+  var settings = {
     'method': method,
     'url': makeURL(path),
     'data': query,
+    // 'dataType': 'json',
     'complete': callback,
-  });
+  };
+  
+  if (method !== 'GET' && method !== 'HEAD')
+    settings.contentType = 'application/json';
+  
+  $.ajax(settings);
 }
 function divWithClass(cl) {
   var div = $("<div>");
@@ -142,7 +151,7 @@ function renderArticle(art) {
       $(this).hide();
       $.ajax({
         url: makeURL('version'),
-        method: 'PUT',
+        method: 'POST',
         
       })
     }),
@@ -252,7 +261,7 @@ function renderArticle(art) {
                 /*
                 $.ajax({
                   'url': makeURL('version'),
-                  'method': 'PUT',
+                  'method': 'POST',
                   
                 })
                 */
@@ -294,12 +303,70 @@ function renderFunction() {
   var art = tagWithClass('article', 'func');
   return art;
 }
-function renderArticle404() {
+function renderArticle404(path) {
+  return renderNewPage(path);
+  return renderArticle({
+    title: 'Uh oh',
+    order: ["foo", "baz", "bar"],
+    foo: { title: "Foo", val: "*Hello*", kind: "md" },
+    bar: { title: "Foo", val: "*Hello*", kind: "txt" },
+    baz: { title: "Foo", val: "function foo()", kind: "js" },
+  });
+  
   var content = divWithClass('article404');
+  content.text("Page not found");
   return content;
 }
-function renderNewPage() {
+function renderNewPage(path) {
   var content = divWithClass('new_page');
+  
+  var titleInput = $("<input name='title' type='text'>");
+  content.append(titleInput);
+  
+  function _makeTSelectInput(name) {
+    return $("<option>").text(name);
+  }
+  
+  var templateSelect = $("<select name='template'>");
+  templateSelect.append([
+    _makeTSelectInput("Article"),
+    _makeTSelectInput("Function"),
+  ])
+  content.append(templateSelect);
+  
+  var editorToolbar = $('<div id="editor_toolbar">');
+  var createButton = $('<div id="edit_button" class="tb_button"></div>');
+  createButton.text("Create");
+  editorToolbar.append(createButton);
+  content.append(editorToolbar);
+  // content.append(editorToolbar);
+
+  // var submit = divWithClass("submit");
+  // submit.text("Create");
+  createButton.on('click', function() {
+    
+    var art = {
+        title: path,
+        order: ["aaa", "bbb", "ccc"],
+        aaa: { title: "AAA", val: "*Hello*", kind: "md" },
+        ccc: { title: "CCC", val: "*Hello*", kind: "txt" },
+        bbb: { title: "BBB", val: "function foo()", kind: "js" },
+    };
+    runJSON('POST', 'api/create-from-template', JSON.stringify(art), function(resp) {
+      var status = resp.status;
+      var content;
+      if (status === 200) {
+        location.reload(true);
+      }
+      else {
+        debugger;
+        alert("Error");
+      }
+      $("main #innerA").append(content);
+    });
+    
+  });
+  
   return content;
 }
 function editSection() {
@@ -318,19 +385,24 @@ function viewForArticle(path) {
     baz: { title: "Foo", val: "function foo()", kind: "js" },
   }
   */
-  
   runJSON('GET', 'api/find-latest', {
     'title': path,
   }, function(resp) {
     var status = resp.status;
     var content;
-    if (status === 200)
+    if (status === 200) {
+      var art = resp.responseJSON.content;
+      console.log(art);
       content = renderArticle(art);
-    else
-      content = renderArticle404();
-    
+    }
+    else if (status === 404)
+      content = renderArticle404(path);
+    else {
+      debugger;
+      alert("Error");
+    }
     $("main #innerA").append(content);
-  })
+  });
   
   return [];
 }
@@ -339,7 +411,7 @@ function route() {
   var path = window.location.pathname;
   if (path.indexOf('/') === 0)
     path = path.slice(1);
-  
+
   var content = null;
   if (path === '') {
     content = renderHome();
