@@ -3,24 +3,55 @@
 <head>
   <meta charset="utf-8">
   <title>Bhasa insanity network</title>
+  <link href="css/codemirror.css" rel="stylesheet" type="text/css">
+  <link href="css/style.css" rel="stylesheet" type="text/css">
   
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/marked/0.3.5/marked.min.js"></script>
+  
+  <script src="js/codemirror.js"></script>
+  <script src="js/addon/runmode/runmode.js"></script>
+  <script src="js/mode/javascript/javascript.js"></script>
+  <script src="js/mode/markdown/markdown.js"></script>
+  <!-- <script src="js/mode/rust/rust.js"></script> -->
+  
+  <script src="js/lodash.min.js"></script>
   <script src="js/website.js"></script>
-  <link href="css/style.css" rel="stylesheet" type="text/css">
 </head>
 <body>
   <header>
-    Bhasa insanity network
+    <div class="inner">
+      <div class="title"><a href="/">bhasa insanity network</a> <span id="pagetitle"><!-- title goes here --></span></div>
+    </div>
   </header>
+  
   <main>
-    <article>
-      <section>
-        <h2>Hello</h2>
-      </section>
-    </article>
+    <div class="inner" id="innerA">
+      
+      <!-- content goes here -->
+      
+      <!--
+      <article>
+        <section>
+          <h2>Hello <input value="edit" type="button"></h2>
+        </section>
+      </article>
+    -->
+      
+      <!--
+      <h1 contenteditable="true" id="title">{{ TITLE2 }}</h1>
+      <div id="editor_toolbar">
+        <div id="submit_change" class="tb_button">Commit</div>
+      </div>
+      <div id="editor"></div>
+      <div id="hidden_source" style="display: none;">{{ SOURCE }}</div>
+    -->
+      
+    </div>
   </main>
+  
   <footer>
-    Ending bhasa insanity network
+    <!-- footer goes here -->
   </footer>
 </body>
 </html>
