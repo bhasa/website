@@ -48,14 +48,12 @@ function makeCodeMirror(el, mode, txt) {
     autofocus: true,
     lineWrapping: true,
     theme: 'cmtn',
-    // theme: "tomorrow-night",
     value: txt,
   });
   codeMirrorGoEnd(cm);
 
   return cm;
 }
-// function hNWithContent(name, val)
 
 
 // --- Rendering ---
@@ -75,8 +73,9 @@ function _renderSearchForm() {
   
   var doSearch = _.debounce(function() {
     var query = search.val();
-    $.get(makeURL('item/search'), { 'q': query }, function(data) {
-      
+    runJSON('GET', 'api/search', { 'q': query }, function(data) {
+      console.log(data);
+      data = data.responseJSON;
       console.log(data);
       
       var rs = data.results;
@@ -142,18 +141,25 @@ function renderArticle(art) {
   
   var order = keyOrderForArticle(art);
   
-  // Toolbar
-  // var editorToolbar = $('<div id="editor_toolbar">');
-  
   var sharedCommit = {
     art: art,
     callback: (function() {
       $(this).hide();
-      $.ajax({
-        url: makeURL('version'),
-        method: 'POST',
-        
-      })
+      
+      var art = window.ARTICLE;
+      
+      runJSON('POST', 'api/item', JSON.stringify(art), function(resp) {
+        var status = resp.status;
+        var content;
+        if (status === 200) {
+          location.reload(true);
+        }
+        else {
+          debugger;
+          alert("Error");
+        }
+      });
+      
     }),
   };
   var commitButton = $('<div id="commit_button" class="tb_button">Commit</div>');
@@ -161,8 +167,6 @@ function renderArticle(art) {
   commitButton.on('click', function() {
     sharedCommit.bind(this)();
   });
-  // editorToolbar.append(commitButton);
-  // content.append(editorToolbar);
   
   // Heading
   var h1 = $('<h1 contenteditable="false" id="title"></h1>');
@@ -205,92 +209,51 @@ function renderArticle(art) {
       if (value.hasOwnProperty('val')) {
         var innerVal = value.val;
         if (_.isString(innerVal)) {
-          // TODO: markdown, code, etc
-          
-          // if (kind === 'md' || kind === 'txt') {
-            
-            var stuff = divWithClass('paras');
-            var cm_mode = 'plain';
-            if (kind === 'md') {
-              // Markdown
-              stuff.html(marked(innerVal));
-              cm_mode = 'markdown';
-            }
-            else if (kind === 'txt') {
-              // Plain text
-              stuff.text(innerVal);;
-            }
-            else {
-              // Something else
-              cm_mode = 'javascript';
-              stuff = tagWithClass('pre');
-              stuff.addClass('padded');
-              stuff.addClass('cm-s-cmtn');
-              CodeMirror.runMode(innerVal, cm_mode, stuff[0]);
-            }
-            section.append(stuff);
-            
-            var editor = divWithClass('editor');
-            editor.hide();
-            var cm = makeCodeMirror(editor, cm_mode, '');
-            section.append(editor);
-            
-            shared.value = innerVal;
-            shared.callback = function() {
-              
-              if (shared.modeString === 'edit') {
-                // Edit mode
-                stuff.hide();
-                editor.show();
-                cm.setValue(shared.value);
-                codeMirrorGoEnd(cm);
-                cm.focus();
-                
-                shared.editButton.text('Commit');
-                shared.editButton.removeClass('edit_button').addClass('important_button')
-                
-                shared.editButton.hide();
-                commitButton.show();
-              }
-              
-              else if (shared.modeString === 'commit') {
-                // Commit mode
-                
-                // TODO: move this up to a big commit button at the top
-                // Create a new version
-                /*
-                $.ajax({
-                  'url': makeURL('version'),
-                  'method': 'POST',
-                  
-                })
-                */
-              }
-            };
-            
-          // }
-          /*
-          else {
-            // Code
-            // 
-            // pre.text(innerVal);
-            // section.append(pre);
-            
-            var editor = divWithClass('editor');
-            var cm = makeCodeMirror(editor, 'markdown', '');
-            // cm.setReadOnly(true);
-            cm.setValue(innerVal);
-            section.append(editor);
-
-            shared.callback = function() {
-              cm.focus();
-            };
+          var stuff = divWithClass('paras');
+          var cm_mode = 'plain';
+          if (kind === 'md') {
+            // Markdown
+            stuff.html(marked(innerVal));
+            cm_mode = 'markdown';
           }
-          */
+          else if (kind === 'txt') {
+            // Plain text
+            stuff.text(innerVal);;
+          }
+          else {
+            // Something else
+            cm_mode = 'javascript';
+            stuff = tagWithClass('pre');
+            stuff.addClass('padded');
+            stuff.addClass('cm-s-cmtn');
+            CodeMirror.runMode(innerVal, cm_mode, stuff[0]);
+          }
+          section.append(stuff);
+          
+          var editor = divWithClass('editor');
+          editor.hide();
+          var cm = makeCodeMirror(editor, cm_mode, '');
+          section.append(editor);
+          
+          shared.value = innerVal;
+          shared.callback = function() {
+            
+            if (shared.modeString === 'edit') {
+              // Edit mode
+              stuff.hide();
+              editor.show();
+              cm.setValue(shared.value);
+              codeMirrorGoEnd(cm);
+              cm.focus();
+              
+              shared.editButton.text('Commit');
+              shared.editButton.removeClass('edit_button').addClass('important_button')
+              
+              shared.editButton.hide();
+              commitButton.show();
+            }
+          };
         }
-        
-        
-        
       }
     }
     
@@ -339,10 +302,7 @@ function renderNewPage(path) {
   createButton.text("Create");
   editorToolbar.append(createButton);
   content.append(editorToolbar);
-  // content.append(editorToolbar);
 
-  // var submit = divWithClass("submit");
-  // submit.text("Create");
   createButton.on('click', function() {
     
     var art = {
@@ -362,7 +322,6 @@ function renderNewPage(path) {
         debugger;
         alert("Error");
       }
-      $("main #innerA").append(content);
     });
     
   });
@@ -375,16 +334,6 @@ function editSection() {
 
 function viewForArticle(path) {
   // Get the article
-  
-  /*
-  var art = {
-    title: path,
-    order: ["foo", "baz", "bar"],
-    foo: { title: "Foo", val: "*Hello*", kind: "md" },
-    bar: { title: "Foo", val: "*Hello*", kind: "txt" },
-    baz: { title: "Foo", val: "function foo()", kind: "js" },
-  }
-  */
   runJSON('GET', 'api/find-latest', {
     'title': path,
   }, function(resp) {
@@ -393,6 +342,7 @@ function viewForArticle(path) {
     if (status === 200) {
       var art = resp.responseJSON.content;
       console.log(art);
+      window.ARTICLE = art;
       content = renderArticle(art);
     }
     else if (status === 404)
@@ -424,61 +374,8 @@ function route() {
   }
   
   $("main #innerA").append(content);
-
-  
-  // page('/:name'n, callback[, callback ...])
 }
 
 $(function() {
-  
-  // The plan:
-  // 1. query the server for an article
-  // 2. render the article as html elements
-  // 3. add to the DOM
-  
-  // $.ajax({
-    // '/item?'
-  // })
-})
-
-
-$(function() {
-  /*
-  console.log($("#editor").get(0));
-  var cm = CodeMirror($("#editor").get(0), {
-    viewportMargin: Infinity,
-    mode: "javascript",
-    tabSize: 2,
-    // lineNumbers: true,
-    autofocus: true,
-    lineWrapping: true,
-    // theme: "tomorrow-night",
-    value: $("#hidden_source").text(),
-  });
-  window.cm = cm;
-  cm.execCommand("goDocEnd"); // try once
-  setTimeout(function() { cm.execCommand("goDocEnd"); }, 1); // try again
-*/
   route();
-    
-  $("#submit_change").click(function() {
-    /*
-    var form = $("<form method='post'>");
-
-    var input1 = $("<input type='hidden'>");
-    input1.attr("name", "source");
-    input1.val(cm.getValue());
-    form.append(input1);
-
-    var input2 = $("<input type='hidden'>");
-    input2.attr("name", "title");
-    input2.val($("h1#title").text());
-    form.append(input2);
-
-    form.append($('input[name="csrfmiddlewaretoken"]'));
-    form.submit();
-    */
-    
-    
-  })
 })
