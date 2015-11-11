@@ -3,7 +3,7 @@ function makeEditButton(onclick) {
   return $('<div class="edit_button tb_button">Edit</div>').on('click', onclick);
 }
 function makeURL(path) {
-  // return '/' + path;
+  return '/' + path;
   return 'https://bhasa.herokuapp.com/' + path;
 }
 function runJSON(method, path, query, callback) {
@@ -135,11 +135,15 @@ function keyOrderForArticle(art) {
   
   return order;
 }
+
+
 function renderArticle(art) {
   var content = tagWithClass('article');
   var ignoredKeys = new Set(['title']);
   
   var order = keyOrderForArticle(art);
+  
+  var editMap = [];
   
   var sharedCommit = {
     art: art,
@@ -147,6 +151,13 @@ function renderArticle(art) {
       $(this).hide();
       
       var art = window.ARTICLE;
+      
+      // Modify
+      editMap.forEach(function(mapping) {
+        mapping();
+      });
+      
+      console.log(JSON.stringify(art, null, 4));
       
       runJSON('POST', 'api/item', JSON.stringify(art), function(resp) {
         var status = resp.status;
@@ -165,7 +176,7 @@ function renderArticle(art) {
   var commitButton = $('<div id="commit_button" class="tb_button">Commit</div>');
   commitButton.hide();
   commitButton.on('click', function() {
-    sharedCommit.bind(this)();
+    sharedCommit.callback.bind(this)();
   });
   
   // Heading
@@ -174,6 +185,17 @@ function renderArticle(art) {
   h1.append(commitButton);
   content.append(h1);
   
+  
+  marked.setOptions({
+    renderer: new marked.Renderer(),
+    gfm: true,
+    tables: true,
+    breaks: false,
+    pedantic: false,
+    sanitize: true,
+    smartLists: true,
+    smartypants: false,
+  });
   
   order.forEach(function(k) {
     if (ignoredKeys.has(k)) return;
@@ -209,6 +231,13 @@ function renderArticle(art) {
       if (value.hasOwnProperty('val')) {
         var innerVal = value.val;
         if (_.isString(innerVal)) {
+          /*editMap.push((function() {
+            return function(_art) {
+              value.val = 
+            };
+          })())*/
+          
+          
           var stuff = divWithClass('paras');
           var cm_mode = 'plain';
           if (kind === 'md') {
@@ -251,6 +280,10 @@ function renderArticle(art) {
               
               shared.editButton.hide();
               commitButton.show();
+              
+              editMap.push(function() {
+                value.val = cm.getValue();
+              });
             }
           };
         }
@@ -307,10 +340,11 @@ function renderNewPage(path) {
     
     var art = {
         title: path,
-        order: ["aaa", "bbb", "ccc"],
-        aaa: { title: "AAA", val: "*Hello*", kind: "md" },
-        ccc: { title: "CCC", val: "*Hello*", kind: "txt" },
-        bbb: { title: "BBB", val: "function foo()", kind: "js" },
+        order: ["description", "impl", "tests"],
+        description: { title: "About", val: "*This is a new page, add some content*", kind: "md" },
+        // ccc: { title: "CCC", val: "*Hello*", kind: "txt" },
+        impl: { title: "Implementation", val: "function foo() {\n}\n", kind: "js" },
+        tests: { title: "Implementation", val: "function test1() {\n}\n", kind: "js" },
     };
     runJSON('POST', 'api/create-from-template', JSON.stringify(art), function(resp) {
       var status = resp.status;
