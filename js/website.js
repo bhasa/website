@@ -3,7 +3,15 @@ function makeEditButton(onclick) {
   return $('<div class="edit_button tb_button">Edit</div>').on('click', onclick);
 }
 function makeURL(path) {
-  return '127.0.0.1:28101/' + path;
+  return '/' + path;
+}
+function runJSON(method, path, query, callback) {
+  $.ajax({
+    'method': method,
+    'url': makeURL(path),
+    'data': query,
+    'complete': callback,
+  });
 }
 function divWithClass(cl) {
   var div = $("<div>");
@@ -119,18 +127,9 @@ function keyOrderForArticle(art) {
   
   return order;
 }
-function renderArticle() {
+function renderArticle(art) {
   var content = tagWithClass('article');
   var ignoredKeys = new Set(['title']);
-    
-  // Get the article
-  var art = {
-    title: "blah",
-    order: ["foo", "baz", "bar"],
-    foo: { title: "Foo", val: "*Hello*", kind: "md" },
-    bar: { title: "Foo", val: "*Hello*", kind: "txt" },
-    baz: { title: "Foo", val: "function foo()", kind: "js" },
-  }
   
   var order = keyOrderForArticle(art);
   
@@ -295,12 +294,67 @@ function renderFunction() {
   var art = tagWithClass('article', 'func');
   return art;
 }
+function renderArticle404() {
+  var content = divWithClass('article404');
+  return content;
+}
 function renderNewPage() {
   var content = divWithClass('new_page');
   return content;
 }
 function editSection() {
   
+}
+
+function viewForArticle(path) {
+  // Get the article
+  
+  /*
+  var art = {
+    title: path,
+    order: ["foo", "baz", "bar"],
+    foo: { title: "Foo", val: "*Hello*", kind: "md" },
+    bar: { title: "Foo", val: "*Hello*", kind: "txt" },
+    baz: { title: "Foo", val: "function foo()", kind: "js" },
+  }
+  */
+  
+  runJSON('GET', 'api/find-latest', {
+    'title': path,
+  }, function(resp) {
+    var status = resp.status;
+    var content;
+    if (status === 200)
+      content = renderArticle(art);
+    else
+      content = renderArticle404();
+    
+    $("main #innerA").append(content);
+  })
+  
+  return [];
+}
+
+function route() {
+  var path = window.location.pathname;
+  if (path.indexOf('/') === 0)
+    path = path.slice(1);
+  
+  var content = null;
+  if (path === '') {
+    content = renderHome();
+  }
+  else if (path === 'search') {
+    content = renderSearch();
+  }
+  else {
+    content = viewForArticle(path);
+  }
+  
+  $("main #innerA").append(content);
+
+  
+  // page('/:name'n, callback[, callback ...])
 }
 
 $(function() {
@@ -317,6 +371,7 @@ $(function() {
 
 
 $(function() {
+  /*
   console.log($("#editor").get(0));
   var cm = CodeMirror($("#editor").get(0), {
     viewportMargin: Infinity,
@@ -331,9 +386,9 @@ $(function() {
   window.cm = cm;
   cm.execCommand("goDocEnd"); // try once
   setTimeout(function() { cm.execCommand("goDocEnd"); }, 1); // try again
-
-  $("main #innerA").append(renderArticle());
-  
+*/
+  route();
+    
   $("#submit_change").click(function() {
     /*
     var form = $("<form method='post'>");
