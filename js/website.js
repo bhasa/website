@@ -3,7 +3,7 @@ function makeEditButton(onclick) {
   return $('<div class="edit_button tb_button">Edit</div>').on('click', onclick);
 }
 function makeURL(path) {
-  return '/' + path;
+  // return '/' + path;
   return 'https://bhasa.herokuapp.com/' + path;
 }
 function runJSON(method, path, query, callback) {
@@ -344,7 +344,7 @@ function renderNewPage(path) {
         description: { title: "About", val: "*This is a new page, add some content*", kind: "md" },
         // ccc: { title: "CCC", val: "*Hello*", kind: "txt" },
         impl: { title: "Implementation", val: "function foo() {\n}\n", kind: "js" },
-        tests: { title: "Implementation", val: "function test1() {\n}\n", kind: "js" },
+        tests: { title: "Tests", val: "function test1() {\n}\n", kind: "js" },
     };
     runJSON('POST', 'api/create-from-template', JSON.stringify(art), function(resp) {
       var status = resp.status;
